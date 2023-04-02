@@ -22,12 +22,22 @@ export default defineConfig({
         {
           name: "react-query",
           var: "ReactQuery",
-          path: "https://cdn.jsdelivr.net/npm/react-query@3/dist/react-query.production.min.js",
+          path: "https://cdn.jsdelivr.net/npm/react-query@{version}/dist/react-query.production.min.js",
         },
         {
           name: "json-format-highlight",
           var: "jsonFormatHighlight",
-          path: "https://cdn.jsdelivr.net/npm/json-format-highlight@1.0.4/dist/json-format-highlight.min.js",
+          path: "https://cdn.jsdelivr.net/npm/json-format-highlight@{version}/dist/json-format-highlight.min.js",
+        },
+        {
+          name: "react-schema-based-json-editor",
+          var: "JSONEditor",
+          path: "https://cdn.jsdelivr.net/npm/react-schema-based-json-editor@{version}/dist/react-schema-based-json-editor.min.js",
+        },
+        {
+          name: "react-hook-form",
+          var: "ReactHookForm",
+          path: "https://cdn.jsdelivr.net/npm/react-hook-form@{version}/dist/index.umd.min.js",
         },
       ],
     }),

@@ -46,8 +46,8 @@ function App(): JSX.Element {
 
     setInitValues({
       creator: address,
-      "msg.creator": address,
-      "msg.address": prefix.split("/")[0],
+      msg_creator: address,
+      msg_address: prefix.split("/")[0],
       height: height || "",
     });
 

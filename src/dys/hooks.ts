@@ -64,7 +64,7 @@ export function useBlockInfo() {
       }
 
       if (mounted) {
-        id = setTimeout(cb, 5000);
+        id = window.setTimeout(cb, 5000);
       }
     };
 
