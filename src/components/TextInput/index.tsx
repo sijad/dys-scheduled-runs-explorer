@@ -3,7 +3,7 @@ import { forwardRef, useId, ChangeEvent, ReactNode } from "react";
 interface TextInputProps {
   label: string;
   name: string;
-  help?: string;
+  help?: ReactNode;
   disabled?: boolean;
   after?: ReactNode;
   onBlur?: (e: ChangeEvent<HTMLInputElement>) => void;

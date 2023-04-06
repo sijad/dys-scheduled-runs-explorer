@@ -11,6 +11,8 @@ export default function BlockDiff({
   const height = info?.header.height;
 
   return height ? (
-    <span>Diff with current block: {Number(block) - Number(height)}</span>
+    <span>
+      Diff with current block: {Number(block) - Number(height)} ({height})
+    </span>
   ) : null;
 }

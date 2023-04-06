@@ -11,6 +11,7 @@ import KWArgsInput from "../KWArgsInput";
 import { Schema } from "react-schema-based-json-editor";
 import { useForm, Controller } from "react-hook-form";
 import Spinner from "../Spinner";
+import BlockDiff from "../BlockDiff";
 
 export interface Values {
   creator: string;
@@ -52,10 +53,21 @@ export default function NewForm({
   const [queryResponse, setQueryResponse] = useState<string>("");
 
   const onSubmit = async (values: Values) => {
-    console.log(values);
+    const msg = Object.fromEntries(
+      Object.entries(values)
+        .filter(([k]) => k.startsWith("msg_"))
+        .map(([k, v]) => [k.substring(4), v])
+    );
+
+    const data = Object.fromEntries(
+      Object.entries(values).filter(([k]) => !k.startsWith("msg_"))
+    );
+
+    data.msg = msg;
+
     const resp = await tryDispatch<Record<string, unknown>>(
       `dyson/sendMsgCreateScheduledRun`,
-      values
+      data
     );
 
     if (!resp) {
@@ -202,6 +214,7 @@ export default function NewForm({
             <Spinner />
           ) : null}
         </div>
+        {/*
         <div className="form-control">
           <TextArea
             label="Arguments"
@@ -209,6 +222,7 @@ export default function NewForm({
             {...register("msg_args")}
           />
         </div>
+        */}
         <div className="relative form-control">
           <TextInput
             label="Creator"
@@ -246,7 +260,11 @@ export default function NewForm({
             <i className="text-sm icon-arrow-up" />
           </AsyncButton>
         </div>
-        <TextInput label="Height" {...register("height")} />
+        <TextInput
+          label="Height"
+          {...register("height")}
+          help={<BlockDiff block={watch("height")} />}
+        />
       </div>
       <div className="relative form-control">
         <div className="absolute right-0 top-2">
