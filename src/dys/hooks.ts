@@ -1,5 +1,5 @@
 import { Key } from "@keplr-wallet/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useReducer } from "react";
 import { useInfiniteQuery } from "react-query";
 import { dispatch, get, initKeplr } from ".";
 import { Block, ScheduledRunAllResponse } from "./types";
@@ -14,28 +14,29 @@ export function useInfiniteScheduledRun(index: string, reversed = false) {
         query: {
           index,
           "pagination.key": pageParam,
-          "pagination.reverse": reversed,
+          "pagination.reverse": !reversed,
           "pagination.limit": "15",
         },
       });
     },
     {
       getNextPageParam: (lastPage) => lastPage.pagination.next_key,
-      enabled: !!api,
+      enabled: !!api && !!index,
     }
   );
 }
 
-export function useAccount(): Key | null {
+export function useAccount(): [Key | null, () => void] {
   const [key, setKey] = useState<Key | null>(null);
+  const [force, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
     initKeplr((key: Key) => {
       setKey(key);
     });
-  }, []);
+  }, [force]);
 
-  return key;
+  return [key, () => forceUpdate()];
 }
 
 export async function getBlockInfo(): Promise<Block | null> {

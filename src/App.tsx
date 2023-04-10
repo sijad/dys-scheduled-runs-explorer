@@ -5,49 +5,40 @@ import NewModal from "./components/NewModal";
 import Item from "./components/Item";
 import Spinner from "./components/Spinner";
 import { useAccount, useBlockInfo, useInfiniteScheduledRun } from "./dys/hooks";
-import useDebounce from "./hooks/useDebounce";
 
 const params = new URLSearchParams(window.location.search);
 
 function App(): JSX.Element {
   const info = useBlockInfo();
-  const account = useAccount();
-  const [prefix, setPrefix] = useState(() => params.get("prefix") || "");
+  const [account] = useAccount();
   const [reversed, setReversed] = useState(
     () => params.get("reversed") === "true"
   );
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [initValues, setInitValues] = useState<Record<string, string>>({});
 
-  const handleChangePrefix = (path: string): void => {
-    setPrefix(path);
-  };
-
-  const debouncedPrefix = useDebounce(prefix, 300);
+  const address = account?.bech32Address || "";
 
   const { data, status, fetchNextPage, isFetchingNextPage, hasNextPage } =
-    useInfiniteScheduledRun(debouncedPrefix, reversed);
+    useInfiniteScheduledRun(address, reversed);
 
   useEffect(() => {
     window.history.replaceState(
       {},
       "",
       `?${new URLSearchParams({
-        prefix,
         reversed: reversed ? "true" : "false",
       })}`
     );
-  }, [prefix, reversed]);
+  }, [reversed]);
 
   const height = info?.header.height;
 
   const handleNew = () => {
-    const address = account?.bech32Address || "";
-
     setInitValues({
       creator: address,
       msg_creator: address,
-      msg_address: prefix.split("/")[0],
+      msg_address: address,
       height: height || "",
     });
 
@@ -58,64 +49,52 @@ function App(): JSX.Element {
     setIsNewOpen(false);
   };
 
+  const pages = data?.pages || [];
+
+  if (!address) {
+    return (
+      <div className={`relative mt-14`}>
+        <div className={`p-6 mx-auto w-full max-w-2xl bg-base-200`}>
+          <p>Connecting to Kepler</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className={`relative mt-14`}>
         <div className={`py-6 mx-auto w-full max-w-2xl bg-base-200`}>
-          <div className={`bg-base-200 px-4 flex mb-8 sticky inset-0 z-10`}>
-            <div className="flex py-1 space-x-2 w-full">
+          <div className={`bg-base-200 px-4 flex mb-8 sticky inset-0 z-20`}>
+            <div className="flex flex-col items-center py-1 space-y-2 w-full sm:flex-row sm:space-y-0 sm:space-x-2">
               <div className="w-full">
-                <div className="w-full form-control">
-                  <label className={`w-full`}>
-                    <span className={`sr-only`}>Index</span>
-                    <input
-                      className="w-full input input-bordered"
-                      placeholder="Index..."
-                      onChange={(e) => handleChangePrefix(e.target.value)}
-                      value={prefix}
-                    />
-                  </label>
-                </div>
+                <div className="text-xs">CONNECTED:</div>
+                <code className="break-all">{address}</code>
               </div>
-              <button
-                className="btn btn-circle"
-                type="button"
-                title="Up One Level"
-                onClick={() => {
-                  setPrefix((prefix) => {
-                    const p = prefix
-                      .replace(/\/$/, "")
-                      .split("/")
-                      .map((i) => i + "/");
-                    p.pop();
-                    return p.join("");
-                  });
-                }}
-              >
-                <i className="text-lg icon-corner-right-up" />
-              </button>
-              <button
-                className="btn btn-circle"
-                type="button"
-                title="Toggle Reversed"
-                onClick={() => {
-                  setReversed((r) => !r);
-                }}
-              >
-                <i
-                  className={`text-lg icon-sort-${reversed ? "desc" : "asc"}`}
-                />
-              </button>
-              {account ? (
+              <div className="flex py-1 space-x-2">
                 <button
-                  className="btn btn-primary btn-circle"
+                  className="btn btn-circle"
                   type="button"
-                  title="Add new storage"
-                  onClick={handleNew}
+                  title="Toggle Reversed"
+                  onClick={() => {
+                    setReversed((r) => !r);
+                  }}
                 >
-                  <i className="text-lg icon-file-plus-2" />
+                  <i
+                    className={`text-lg icon-sort-${reversed ? "desc" : "asc"}`}
+                  />
                 </button>
-              ) : null}
+                {address ? (
+                  <button
+                    className="btn btn-primary btn-circle"
+                    type="button"
+                    title="Create new a Scheduled Run"
+                    onClick={handleNew}
+                  >
+                    <i className="text-lg icon-calendar-plus" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="px-4">
@@ -125,16 +104,10 @@ function App(): JSX.Element {
                 <Spinner />
               </div>
             ) : null}
-            {data?.pages.map((page, i) => (
+            {pages.map((page, i) => (
               <Fragment key={i}>
                 {page.scheduled_run.map((s) => (
-                  <Item
-                    key={s.index}
-                    item={s}
-                    prefix={prefix}
-                    onPathClick={handleChangePrefix}
-                    blockHeight={height}
-                  />
+                  <Item key={s.index} item={s} blockHeight={height} />
                 ))}
               </Fragment>
             ))}

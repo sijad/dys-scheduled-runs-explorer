@@ -1,62 +1,140 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ScheduledRun } from "../../dys/types";
-import { formatHighlightJSON, getJSON } from "../../utils";
-import Path from "../Path";
+import { queryClient } from "../../queries";
 
 interface ItemProps {
   item: ScheduledRun;
-  onPathClick: (path: string) => void;
-  prefix: string;
   blockHeight?: string;
 }
 
-const preStyle = {
-  lineHeight: 1.5,
-  backgroundImage: "linear-gradient(transparent 50%, rgba(0,0,0,0.1) 50%)",
-  backgroundSize: "3em 3em",
-};
+const thStyle = {
+  position: "relative",
+  verticalAlign: "initial",
+} as const;
 
-export default function Item({
-  item,
-  onPathClick,
-  prefix,
-  blockHeight,
-}: ItemProps): JSX.Element {
-  const [itemHTML, setItemHTML] = useState<string | undefined>();
+const tdStyle = {
+  whiteSpace: "normal",
+  hyphens: "auto",
+  wordBreak: "break-word",
+  wordWrap: "break-word",
+} as const;
+
+export default function Item({ item, blockHeight }: ItemProps): JSX.Element {
+  const diffRef = useRef<number | null>(null);
+  const diff = Number(item.height) - Number(blockHeight);
 
   useEffect(() => {
-    const msg = { ...item.msg };
-    const resp = { ...item.resp };
-
-    msg.args = getJSON(msg.args) || msg.args;
-    msg.kwargs = getJSON(msg.kwargs) || msg.kwargs;
-    msg.kwargs = getJSON(msg.kwargs) || msg.kwargs;
-
-    if (resp.response) {
-      resp.response = getJSON(resp.response) || resp.response;
+    if (diffRef.current !== null) {
+      if (diff < -1) {
+        queryClient.invalidateQueries("scheduled-run-all");
+        diffRef.current = null;
+      }
+    } else if (diff > 0) {
+      diffRef.current = diff;
     }
+  }, [diff]);
 
-    setItemHTML(formatHighlightJSON({ ...item, msg, resp }));
-  }, [item]);
+  const msg = item.msg;
+
+  const message = msg && (
+    <dl className="space-y-2">
+      {[
+        {
+          title: "Address",
+          value: msg.address,
+        },
+        {
+          title: "Function",
+          value: `${msg.function_name}`,
+        },
+        {
+          title: "Keyword Args",
+          value: msg.kwargs,
+        },
+        {
+          title: "Args",
+          value: msg.args,
+        },
+        {
+          title: "Coins",
+          value: msg.coins,
+        },
+        {
+          title: "Extra Lines",
+          value: msg.extra_lines && <code>{msg.extra_lines}</code>,
+        },
+      ].map(({ title, value }) =>
+        value ? (
+          <div key={title}>
+            <dt className="text-xs">{title}:</dt>
+            <dd>{value}</dd>
+          </div>
+        ) : null
+      )}
+    </dl>
+  );
 
   return (
     <div className="p-4 my-6 shadow-sm card bg-base-100">
-      <Path prefix={prefix} path={item.index} onClick={onPathClick} />
-      <div className={`flex mt-2 text-sm space-x-1`}>
-        {"Height Diff: "}
-        <pre> {Number(item.height) - Number(blockHeight)}</pre>
-      </div>
-      {itemHTML ? (
-        <div
-          className={`my-2 bg-base-200 border-1 border-base-300 max-w-full overflow-x-auto`}
-        >
-          <pre
-            className={`w-max min-w-full`}
-            style={preStyle}
-            dangerouslySetInnerHTML={{ __html: itemHTML }}
-          />
+      <div className="flex items-center space-x-2">
+        <div className={`badge badge-xs ${getStatus(item)}`}></div>
+        <div className="overflow-x-auto">
+          <code className="text-sm">{item.index}</code>
         </div>
-      ) : null}
+      </div>
+      <table className="table table-compact table-zebra">
+        <tbody>
+          {[
+            {
+              title: "Height",
+              value: `${item.height} (diff: ${diff})`,
+            },
+            {
+              title: "Message",
+              value: message,
+            },
+            {
+              title: "Response",
+              value: item.resp?.response,
+            },
+            {
+              title: "Error",
+              value: item.error,
+            },
+            {
+              title: "Gas",
+              value: item.gas,
+            },
+            {
+              title: "Gas Price",
+              value: `${item.gasprice.amount}${item.gasprice.denom}`,
+            },
+            {
+              title: "Fee",
+              value: `${item.fee.amount}${item.fee.denom}`,
+            },
+          ].map(({ title, value }) =>
+            value ? (
+              <tr key={title}>
+                <th style={thStyle}>{title}</th>
+                <td style={tdStyle}>{value}</td>
+              </tr>
+            ) : null
+          )}
+        </tbody>
+      </table>
     </div>
   );
+}
+
+function getStatus(item: ScheduledRun) {
+  if (item.error) {
+    return "badge-error";
+  }
+
+  if (item.resp) {
+    return "badge-success";
+  }
+
+  return "badge-warning";
 }

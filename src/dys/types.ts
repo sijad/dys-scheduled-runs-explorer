@@ -6,7 +6,7 @@ export interface ScheduledRun {
   creator: string;
   height: string;
   gas: string;
-  msg: Msg;
+  msg?: Msg;
   resp?: {
     response: string;
   };

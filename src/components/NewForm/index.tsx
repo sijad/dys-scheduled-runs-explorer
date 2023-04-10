@@ -32,6 +32,8 @@ interface NewFormProps {
   onBack: () => void;
 }
 
+const GAS_FACTOR = 2.05;
+
 export default function NewForm({
   initValues,
   functions,
@@ -90,8 +92,8 @@ export default function NewForm({
       (resp?.response as Record<string, unknown>)?.script_gas_consumed
     );
 
-    consumed *= 1.2;
-    consumed = Math.round(consumed);
+    consumed *= GAS_FACTOR;
+    consumed = Math.ceil(consumed);
 
     if (consumed) {
       setValue("gas", `${consumed}`);

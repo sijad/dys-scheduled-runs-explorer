@@ -75,10 +75,6 @@ export default function NewModal({
         (i: Record<string, string>) => i.function
       );
 
-      if (!functions.length) {
-        throw new Error("something went wrong");
-      }
-
       const options = functions.map((f: string) => ({ label: f, value: f }));
       options.unshift({ label: "[None]", value: "" });
 
